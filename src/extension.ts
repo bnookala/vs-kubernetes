@@ -14,6 +14,7 @@ import * as yaml from 'js-yaml';
 import * as shell from 'shelljs';
 import * as dockerfileParse from 'dockerfile-parse';
 
+const WINDOWS = 'win32';
 // Internal dependencies
 import formatExplain from './explainer';
 
@@ -63,7 +64,6 @@ export function activate(context) {
 
 // this method is called when your extension is deactivated
 export const deactivate = () => { };
-
 function checkForKubectl(errorMessageMode, handler) {
     if (kubectlFound) {
         handler();
