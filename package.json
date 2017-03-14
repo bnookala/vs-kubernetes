@@ -21,6 +21,7 @@
         "onCommand:extension.vsKubernetesLogs",
         "onCommand:extension.vsKubernetesExpose",
         "onCommand:extension.vsKubernetesDescribe",
+        "onCommand:extension.vsKubernetesWatch",
         "onCommand:extension.vsKubernetesSync",
         "onCommand:extension.vsKubernetesExec",
         "onCommand:extension.vsKubernetesTerminal",
@@ -53,61 +54,72 @@
                 }
             }
         },
-        "commands": [{
-            "command": "extension.vsKubernetesCreate",
-            "title": "Kubernetes Create"
-        }, {
-            "command": "extension.vsKubernetesDelete",
-            "title": "Kubernetes Delete"
-        }, {
-            "command": "extension.vsKubernetesApply",
-            "title": "Kubernetes Apply"
-        }, {
-            "command": "extension.vsKubernetesExplain",
-            "title": "Kubernetes Explain"
-        }, {
-            "command": "extension.vsKubernetesLoad",
-            "title": "Kubernetes Load"
-        }, {
-            "command": "extension.vsKubernetesGet",
-            "title": "Kubernetes Get"
-        }, {
-            "command": "extension.vsKubernetesRun",
-            "title": "Kubernetes Run"
-        }, {
-            "command": "extension.vsKubernetesLogs",
-            "title": "Kubernetes Logs"
-        }, {
-            "command": "extension.vsKubernetesExpose",
-            "title": "Kubernetes Expose"
-        }, {
-            "command": "extension.vsKubernetesDescribe",
-            "title": "Kubernetes Describe"
-        }, {
-            "command": "extension.vsKubernetesSync",
-            "title": "Kubernetes Sync"
-        }, {
-            "command": "extension.vsKubernetesExec",
-            "title": "Kubernetes Exec"
-        }, {
-            "command": "extension.vsKubernetesTerminal",
-            "title": "Kubernetes Terminal"
-        }, {
-            "command": "extension.vsKubernetesDiff",
-            "title": "Kubernetes Diff"
-        }, {
-            "command": "extension.vsKubernetesScale",
-            "title": "Kubernetes Scale"
-        }, {
-            "command": "extension.vsKubernetesDebug",
-            "title": "Kubernetes Debug"
-        }, {
-            "command": "extension.vsKubernetesRemoveDebug",
-            "title": "Kubernetes Remove Debug"
-        }, {
-            "command": "extension.vsKubernetesConfigureFromAcs",
-            "title": "Kubernetes Configure from ACS"
-        }]
+        "commands": [
+            {
+                "command": "extension.vsKubernetesCreate",
+                "title": "Kubernetes Create"
+            },
+            {
+                "command": "extension.vsKubernetesDelete",
+                "title": "Kubernetes Delete"
+            },
+            {
+                "command": "extension.vsKubernetesApply",
+                "title": "Kubernetes Apply"
+            },
+            {
+                "command": "extension.vsKubernetesExplain",
+                "title": "Kubernetes Explain"
+            },
+            {
+                "command": "extension.vsKubernetesLoad",
+                "title": "Kubernetes Load"
+            },
+            {
+                "command": "extension.vsKubernetesGet",
+                "title": "Kubernetes Get"
+            },
+            {
+                "command": "extension.vsKubernetesRun",
+                "title": "Kubernetes Run"
+            },
+            {
+                "command": "extension.vsKubernetesLogs",
+                "title": "Kubernetes Logs"
+            },
+            {
+                "command": "extension.vsKubernetesExpose",
+                "title": "Kubernetes Expose"
+            },
+            {
+                "command": "extension.vsKubernetesDescribe",
+                "title": "Kubernetes Describe"
+            },
+            {
+                "command": "extension.vsKubernetesWatch",
+                "title": "Kubernetes Watch"
+            },
+            {
+                "command": "extension.vsKubernetesSync",
+                "title": "Kubernetes Sync"
+            },
+            {
+                "command": "extension.vsKubernetesExec",
+                "title": "Kubernetes Exec"
+            },
+            {
+                "command": "extension.vsKubernetesTerminal",
+                "title": "Kubernetes Terminal"
+            },
+            {
+                "command": "extension.vsKubernetesDiff",
+                "title": "Kubernetes Diff"
+            },
+            {
+                "command": "extension.vsKubernetesDebug",
+                "title": "Kubernetes Debug"
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "tsc -p ./ || true",

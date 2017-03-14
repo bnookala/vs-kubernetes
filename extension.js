@@ -16,6 +16,8 @@ const shell = require('shelljs');
 
 const WINDOWS = 'win32';
 
+const outputChannel = vscode.window.createOutputChannel('vs-kubernetes');
+
 let explainActive = false;
 let kubectlFound = false;
 
@@ -51,6 +53,7 @@ function activate(context) {
         vscode.commands.registerCommand('extension.vsKubernetesLogs', logsKubernetes),
         vscode.commands.registerCommand('extension.vsKubernetesExpose', exposeKubernetes),
         vscode.commands.registerCommand('extension.vsKubernetesDescribe', describeKubernetes),
+        vscode.commands.registerCommand('extension.vsKubernetesWatch', watchKubernetes),
         vscode.commands.registerCommand('extension.vsKubernetesSync', syncKubernetes),
         vscode.commands.registerCommand('extension.vsKubernetesExec', curry(execKubernetes, false)),
         vscode.commands.registerCommand('extension.vsKubernetesTerminal', curry(execKubernetes, true)),
@@ -66,9 +69,7 @@ function activate(context) {
         )
     ];
 
-    subscriptions.forEach(function(element) {
-        context.subscriptions.push(element);
-    }, this);
+    subscriptions.forEach((sub) => context.subscriptions.push(sub), this);
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -328,7 +329,9 @@ function kubectlDone(result, stdout, stderr) {
         vscode.window.showErrorMessage("Kubectl command failed: " + stderr);
         return;
     }
-    vscode.window.showInformationMessage(stdout);
+
+    outputChannel.append(stdout);
+    outputChannel.show(true);
 }
 
 function exposeKubernetes() {
@@ -499,12 +502,18 @@ function buildPushThenExec(fn) {
 }
 
 function findKindName() {
-    var editor = vscode.window.activeTextEditor;
+    const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showErrorMessage("No active editor!");
         return null; // No open text editor
     }
-    var text = editor.document.getText();
+
+    const text = editor.document.getText();
+
+    if (text.length === 0) {
+        return null; // No text in open editor.
+    }
+
     return findKindNameForText(text);
 }
 
@@ -649,6 +658,25 @@ function describeKubernetes() {
     findKindNameOrPrompt().then(function (value) {
         var fn = curry(kubectlOutput, value + "-describe");
         kubectlInternal(' describe ' + value, fn);
+    });
+}
+
+
+var watchTerminal;
+
+function watchKubernetes () {
+    vscode.window.showInputBox().then(function (value) {
+        // let's try to keep only one `watch` terminal opened at a time, since
+        // they don't dispose automatically (unless the lil garbage can is clicked)
+        if (watchTerminal) {
+            watchTerminal.hide();
+            watchTerminal.dispose();
+        }
+
+        // TODO: validate the value option.
+        let watchCommand = ['get', value, '--all-namespaces', '--watch']
+        watchTerminal = vscode.window.createTerminal('Kubernetes Watch', 'kubectl', watchCommand)
+        watchTerminal.show();
     });
 }
 
@@ -887,9 +915,10 @@ let waitForRunningPod = function (name, callback) {
         });
 }
 
-exports.activate = activate;
-
 // this method is called when your extension is deactivated
 function deactivate() { }
 
-exports.deactivate = deactivate;
+module.exports = {
+    activate,
+    deactivate
+}
