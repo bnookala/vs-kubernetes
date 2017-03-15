@@ -57,67 +57,83 @@
         "commands": [
             {
                 "command": "extension.vsKubernetesCreate",
-                "title": "Kubernetes Create"
+                "title": "Create",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesDelete",
-                "title": "Kubernetes Delete"
+                "title": "Delete",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesApply",
-                "title": "Kubernetes Apply"
+                "title": "Apply",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesExplain",
-                "title": "Kubernetes Explain"
+                "title": "Explain",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesLoad",
-                "title": "Kubernetes Load"
+                "title": "Load",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesGet",
-                "title": "Kubernetes Get"
+                "title": "Get",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesRun",
-                "title": "Kubernetes Run"
+                "title": "Run",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesLogs",
-                "title": "Kubernetes Logs"
+                "title": "Logs",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesExpose",
-                "title": "Kubernetes Expose"
+                "title": "Expose",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesDescribe",
-                "title": "Kubernetes Describe"
+                "title": "Describe",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesWatch",
-                "title": "Kubernetes Watch"
+                "title": "Watch a Resource",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesSync",
-                "title": "Kubernetes Sync"
+                "title": "Sync",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesExec",
-                "title": "Kubernetes Exec"
+                "title": "Run/Exec Command on Pod",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesTerminal",
-                "title": "Kubernetes Terminal"
+                "title": "Bash Terminal to Pod",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesDiff",
-                "title": "Kubernetes Diff"
+                "title": "Diff",
+                "category": "Kubernetes"
             },
             {
                 "command": "extension.vsKubernetesDebug",
-                "title": "Kubernetes Debug"
+                "title": "Debug",
+                "category": "Kubernetes"
             }
         ]
     },

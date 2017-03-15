@@ -428,7 +428,13 @@ function findVersionInternal(fn) {
 }
 
 function findPods(labelQuery, callback) {
-    kubectlInternal(' get pods -o json -l ' + labelQuery, function (result, stdout, stderr) {
+    let findPodsCmd = ' get pods -o json'
+
+    if (labelQuery) {
+        findPodsCmd = ` get pods -o json -l ${labelQuery}`
+    }
+
+    kubectlInternal(findPodsCmd, function (result, stdout, stderr) {
         if (result !== 0) {
             vscode.window.showErrorMessage("Kubectl command failed: " + stderr);
             return;
@@ -444,6 +450,11 @@ function findPods(labelQuery, callback) {
 }
 
 function findPodsForApp(callback) {
+    if (!vscode.workspace.rootPath) {
+        findPods('', callback);
+        return;
+    }
+
     var appName = path.basename(vscode.workspace.rootPath);
     findPods(`run=${appName}`, callback);
 }
@@ -547,9 +558,9 @@ function findKindNameOrPrompt() {
 
 function curry(fn, arg) {
     return function () {
-        var args = Array.prototype.slice.call(arguments, 0);
+        var args = Array.prototype.slice.call(arguments, 1);
         args.push(arg);
-        return fn.apply(null, args);
+        return fn.apply(this, args);
     }
 }
 
