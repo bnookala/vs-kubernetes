@@ -2,17 +2,17 @@
 
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-const vscode = require('vscode');
+import * as vscode from 'vscode';
 
 // Standard node imports
-const os = require('os');
-const path = require('path');
-const fs = require('fs');
-const yaml = require('js-yaml');
+import * as os from 'os';
+import * as path from 'path';
+import * as fs from 'fs';
 
-// External dependencies
-const dockerfileParse = require('dockerfile-parse');
-const shell = require('shelljs');
+// External Dependencies
+import * as dockerfileParse from 'dockerfile-parse';
+import * as shell from 'shelljs';
+import * as yaml from 'js-yaml';
 
 export const WINDOWS = 'win32';
 export let kubectlFound = false;

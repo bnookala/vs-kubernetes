@@ -1,7 +1,7 @@
 'use strict';
 
-const path = require('path');
-const vscode = require('vscode');
+import * as path from 'path';
+import * as vscode from 'vscode';
 
 import {findPods} from '../extension';
 import {kubectl, kubectlInternal, waitForRunningPod, buildPushThenExec } from '../kubeutil';

@@ -1,11 +1,10 @@
 'use strict';
 
-const shell = require('shelljs');
-const path = require('path');
-const fs = require('fs');
-const yaml = require('js-yaml');
-
-const vscode = require('vscode');
+import * as shell from 'shelljs';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as yaml from 'js-yaml';
+import * as vscode from 'vscode';
 import {kubectlFound} from './extension';
 
 const WINDOWS = 'win32';
