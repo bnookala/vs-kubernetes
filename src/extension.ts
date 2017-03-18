@@ -17,8 +17,6 @@ import * as yaml from 'js-yaml';
 export const WINDOWS = 'win32';
 export let kubectlFound = false;
 
-let explainActive = false;
-
 import {
     shellExec,
     kubectlInternal,
@@ -27,11 +25,16 @@ import {
     buildPushThenExec,
     findKindName,
     findKindNameOrPrompt,
-    findKindNameForText
+    findKindNameForText,
+    maybeRunKubernetesCommandForActiveWindow
+
 } from './kubeutil';
 
-import {debugKubernetes} from './commands/debug';
-import {deleteKubernetes} from './commands/delete'
+import { debugKubernetes } from './commands/debug';
+import { deleteKubernetes } from './commands/delete';
+import { diffKubernetes } from './commands/diff';
+import { applyKubernetes } from './commands/apply';
+import { provideHover, explainActiveWindow } from './hover/hoverProvider';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -84,232 +87,6 @@ export function activate(context) {
     subscriptions.forEach((sub) => context.subscriptions.push(sub), this);
 }
 
-// eslint-disable-next-line no-unused-vars
-function provideHover(document, position, token) {
-    if (!explainActive) {
-        return null;
-    }
-    var body = document.getText();
-    var obj:any = {};
-    try {
-        obj = JSON.parse(body);
-    } catch (err) {
-        // Bad JSON
-        return null;
-    }
-    // Not a k8s object.
-    if (!obj.kind) {
-        return null;
-    }
-    var property = findProperty(document.lineAt(position.line));
-    var field = JSON.parse(property);
-
-    var parentLine = findParent(document, position.line - 1);
-    while (parentLine !== -1) {
-        var parentProperty = findProperty(document.lineAt(parentLine));
-        field = JSON.parse(parentProperty) + '.' + field;
-        parentLine = findParent(document, parentLine - 1);
-    }
-
-    if (field === 'kind') {
-        field = '';
-    }
-    return {
-        'then': function (fn) {
-            explain(obj, field, function (msg) {
-                fn(new vscode.Hover({
-                    'language': 'json',
-                    'value': msg
-                }));
-            });
-        }
-    };
-}
-
-function findProperty(line) {
-    var ix = line.text.indexOf(":");
-    return line.text.substring(line.firstNonWhitespaceCharacterIndex, ix);
-}
-
-function findParent(document, line) {
-    var count = 1;
-    while (line >= 0) {
-        var txt = document.lineAt(line);
-        if (txt.text.indexOf('}') !== -1) {
-            count = count + 1;
-        }
-        if (txt.text.indexOf('{') !== -1) {
-            count = count - 1;
-            if (count === 0) {
-                break;
-            }
-        }
-        line = line - 1;
-    }
-    while (line >= 0) {
-        txt = document.lineAt(line);
-        if (txt.text.indexOf(':') !== -1) {
-            return line;
-        }
-        line = line - 1;
-    }
-    return line;
-}
-
-function explain(obj, field, fn) {
-    if (!obj.kind) {
-        vscode.window.showErrorMessage("Not a Kubernetes API Object!");
-        return;
-    }
-    var ref = obj.kind;
-    if (field && field.length > 0) {
-        ref = ref + "." + field;
-    }
-    kubectlInternal(` explain ${ref}`, function (result, stdout, stderr) {
-        if (result !== 0) {
-            vscode.window.showErrorMessage("Failed to run explain: " + stderr);
-            return;
-        }
-        fn(stdout);
-    });
-}
-
-function explainActiveWindow() {
-    var editor = vscode.window.activeTextEditor;
-    var bar = initStatusBar();
-    if (!editor) {
-        vscode.window.showErrorMessage("No active editor!");
-        bar.hide();
-        return; // No open text editor
-    }
-    explainActive = !explainActive;
-    if (explainActive) {
-        vscode.window.showInformationMessage("Kubernetes API explain activated.");
-        bar.show();
-    } else {
-        vscode.window.showInformationMessage("Kubernetes API explain deactivated.");
-        bar.hide();
-    }
-}
-
-var statusBarItem;
-
-function initStatusBar() {
-    if (!statusBarItem) {
-        statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-        statusBarItem.text = "kubernetes-api-explain";
-    }
-
-    return statusBarItem;
-}
-
-// Runs a command for the text in the active window.
-// Expects that it can append a filename to 'command' to create a complete kubectl command.
-//
-// @parameter command string The command to run
-function maybeRunKubernetesCommandForActiveWindow(command) {
-    var editor = vscode.window.activeTextEditor;
-    if (!editor) {
-        vscode.window.showErrorMessage("No active editor!");
-        return false; // No open text editor
-    }
-    var namespace = vscode.workspace.getConfiguration('vs-kubernetes')['vs-kubernetes.namespace'];
-    if (namespace) {
-        command = `${command} --namespace ${namespace}`;
-    }
-    if (editor.selection) {
-        var text = editor.document.getText(editor.selection);
-        if (text.length > 0) {
-            var proc:any = kubectl(command + "-");
-            proc.stdin.write(text);
-            proc.stdin.end();
-            return true;
-        }
-    }
-    if (editor.document.isUntitled) {
-        text = editor.document.getText();
-        if (text.length > 0) {
-            proc = kubectl(command + "-");
-            proc.stdin.write(text);
-            proc.stdin.end();
-            return true;
-        }
-        return false;
-    }
-    if (editor.document.isDirty) {
-        // TODO: I18n this?
-        var confirm = "Save";
-        var promise = vscode.window.showWarningMessage("You have unsaved changes!", confirm);
-        promise.then(function (value) {
-            if (value && value === confirm) {
-                editor.document.save().then(function (ok) {
-                    if (!ok) {
-                        vscode.window.showErrorMessage("Save failed.");
-                        return;
-                    }
-                    kubectl(command + editor.document.fileName);
-                });
-            }
-        });
-    } else {
-        console.log(command + editor.document.fileName);
-        kubectl(command + editor.document.fileName);
-    }
-    return true;
-}
-
-/**
- * Gets the text content (in the case of unsaved or selections), or the filename
- *
- * @param callback function(text, filename)
- */
-function getTextForActiveWindow(callback) {
-    var editor = vscode.window.activeTextEditor;
-    if (!editor) {
-        vscode.window.showErrorMessage("No active editor!");
-        callback(null, null);
-        return;
-    }
-    var namespace = vscode.workspace.getConfiguration('vs-kubernetes')['vs-kubernetes.namespace'];
-    if (namespace) {
-        var command = `${command} --namespace ${namespace}`;
-    }
-    if (editor.selection) {
-        var text = editor.document.getText(editor.selection);
-        if (text.length > 0) {
-            callback(text, null);
-            return;
-        }
-    }
-    if (editor.document.isUntitled) {
-        text = editor.document.getText();
-        if (text.length > 0) {
-            callback(text, null);
-            return;
-        }
-    }
-    if (editor.document.isDirty) {
-        // TODO: I18n this?
-        var confirm = "Save";
-        var promise = vscode.window.showWarningMessage("You have unsaved changes!", confirm);
-        promise.then(function (value) {
-            if (value && value === confirm) {
-                editor.document.save().then(function (ok) {
-                    if (!ok) {
-                        vscode.window.showErrorMessage("Save failed.");
-                        callback(null, null);
-                        return;
-                    }
-                    callback(null, editor.document.fileName);
-                });
-            }
-            callback(null, null);
-        });
-    } else {
-        callback(null, editor.document.fileName);
-    }
-}
-
 function loadKubernetes() {
     vscode.window.showInputBox({
         prompt: "What resource do you want to load?"
@@ -335,8 +112,6 @@ function loadKubernetes() {
         })
     });
 }
-
-
 
 function exposeKubernetes() {
     var kindName = findKindName();
@@ -365,7 +140,6 @@ function getKubernetes() {
         kubectl(` get ${value} -o wide --no-headers`);
     });
 }
-
 
 export function findPods(labelQuery, callback) {
     let findPodsCmd = ' get pods -o json'
@@ -603,7 +377,7 @@ function syncKubernetes() {
         selectContainerForPod(pod, function (container) {
             var pieces = container.image.split(':');
             if (pieces.length !== 2) {
-                vscode.windows.showErrorMessage(`unexpected image name: ${container.image}`);
+                vscode.window.showErrorMessage(`unexpected image name: ${container.image}`);
                 return;
             }
             var home = process.env[(process.platform === WINDOWS) ? 'USERPROFILE' : 'HOME']
@@ -651,75 +425,5 @@ function findBinary(binName, callback) {
     });
 }
 
-let applyKubernetes = function () {
-    diffKubernetes(function () {
-        vscode.window.showInformationMessage(
-            'Do you wish to apply this change?',
-            'Apply'
-        ).then(
-            function (result) {
-                if (result === 'Apply') {
-                    maybeRunKubernetesCommandForActiveWindow('apply -f');
-                }
-            }
-            );
-    });
-}
-
-let handleError = function (err) {
-    if (err) {
-        vscode.window.showErrorMessage(err);
-    }
-}
-
-let diffKubernetes = function (callback) {
-    getTextForActiveWindow(function (data, file) {
-        console.log(data, file);
-        var kindName = null;
-        var fileName = null;
-        if (data) {
-            kindName = findKindNameForText(data);
-            fileName = path.join(os.tmpdir(), 'local.json');
-            fs.writeFile(fileName, data, handleError);
-        } else if (file) {
-            kindName = findKindName();
-            fileName = file;
-        } else {
-            vscode.window.showInformationMessage('Nothing to diff.');
-            return;
-        }
-        if (!kindName) {
-            vscode.window.showWarningMessage('Could not find a valid API object');
-            return;
-        }
-        kubectlInternal(` get -o json ${kindName}`, function (result, stdout, stderr) {
-            if (result !== 0) {
-                vscode.window.showErrorMessage('Error running command: ' + stderr);
-                return;
-            }
-            var otherFile = path.join(os.tmpdir(), 'server.json');
-            fs.writeFile(otherFile, stdout, handleError);
-            vscode.commands.executeCommand(
-                'vscode.diff',
-                vscode.Uri.parse('file://' + otherFile),
-                vscode.Uri.parse('file://' + fileName)).then(function (result) {
-                    console.log(result);
-                    if (callback) {
-                        callback();
-                    }
-                });
-        });
-    });
-}
-
-
-
 // this method is called when your extension is deactivated
-function deactivate() { }
-
-module.exports = {
-    activate,
-    deactivate,
-    kubectlFound,
-    findPods
-}
+export function deactivate() { }

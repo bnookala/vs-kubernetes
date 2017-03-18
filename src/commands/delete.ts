@@ -1,4 +1,4 @@
-import {findKindNameOrPrompt, kubectl} from '../kubeutil';
+import { findKindNameOrPrompt, kubectl } from '../kubeutil';
 
 export let deleteKubernetes = function () {
     findKindNameOrPrompt().then(function (kindName) {

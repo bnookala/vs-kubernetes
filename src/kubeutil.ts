@@ -136,6 +136,61 @@ export function findKindNameOrPrompt() {
     return vscode.window.showInputBox({ prompt: "What resource do you want to load?" });
 }
 
+// Runs a command for the text in the active window.
+// Expects that it can append a filename to 'command' to create a complete kubectl command.
+//
+// @parameter command string The command to run
+export function maybeRunKubernetesCommandForActiveWindow(command) {
+    var editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage("No active editor!");
+        return false; // No open text editor
+    }
+    var namespace = vscode.workspace.getConfiguration('vs-kubernetes')['vs-kubernetes.namespace'];
+    if (namespace) {
+        command = `${command} --namespace ${namespace}`;
+    }
+    if (editor.selection) {
+        var text = editor.document.getText(editor.selection);
+        if (text.length > 0) {
+            var proc:any = kubectl(command + "-");
+            proc.stdin.write(text);
+            proc.stdin.end();
+            return true;
+        }
+    }
+    if (editor.document.isUntitled) {
+        text = editor.document.getText();
+        if (text.length > 0) {
+            proc = kubectl(command + "-");
+            proc.stdin.write(text);
+            proc.stdin.end();
+            return true;
+        }
+        return false;
+    }
+    if (editor.document.isDirty) {
+        // TODO: I18n this?
+        var confirm = "Save";
+        var promise = vscode.window.showWarningMessage("You have unsaved changes!", confirm);
+        promise.then(function (value) {
+            if (value && value === confirm) {
+                editor.document.save().then(function (ok) {
+                    if (!ok) {
+                        vscode.window.showErrorMessage("Save failed.");
+                        return;
+                    }
+                    kubectl(command + editor.document.fileName);
+                });
+            }
+        });
+    } else {
+        console.log(command + editor.document.fileName);
+        kubectl(command + editor.document.fileName);
+    }
+    return true;
+}
+
 function findNameAndImage() {
     return {
         'then': _findNameAndImageInternal
