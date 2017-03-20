@@ -3,48 +3,26 @@ import * as yaml from 'js-yaml';
 
 import { kubectlInternal } from '../kubeutil';
 
+let _explainActive = false;
 
-let explainActive = false;
+export function setExplainStatus(status:boolean): void {
+    _explainActive = status;
+}
+
+export function getExplainStatus(): boolean {
+    return _explainActive;
+}
+
 let statusBarItem = undefined;
 
-function initStatusBar() {
-    if (!statusBarItem) {
-        statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
-        statusBarItem.text = "kubernetes-api-explain";
-    }
-
-    return statusBarItem;
-}
-
-export function explainActiveWindow() {
-    var editor = vscode.window.activeTextEditor;
-    var bar = initStatusBar();
-
-    if (!editor) {
-        vscode.window.showErrorMessage("No active editor!");
-        bar.hide();
-        return; // No open text editor
-    }
-
-    explainActive = !explainActive;
-
-    if (explainActive) {
-        vscode.window.showInformationMessage("Kubernetes API explain activated.");
-        bar.show();
-    } else {
-        vscode.window.showInformationMessage("Kubernetes API explain deactivated.");
-        bar.hide();
-    }
-}
-
 // eslint-disable-next-line no-unused-vars
-export async function provideHover(document:vscode.TextDocument, position, token): Promise<vscode.Hover> {
+export async function provideHover(document: vscode.TextDocument, position, token): Promise<vscode.Hover> {
     return new Promise<vscode.Hover>(async resolve => {
-        if (!explainActive) {
+        if (!_explainActive) {
             return undefined;
         }
         var body = document.getText();
-        var obj:any = {};
+        var obj: any = {};
 
         // Switch over the supported markups.
         try {
@@ -116,7 +94,7 @@ function findParent(document, line) {
     return line;
 }
 
-async function explain(obj, field):Promise<string> {
+async function explain(obj, field): Promise<string> {
     return new Promise<string>(resolve => {
         if (!obj.kind) {
             vscode.window.showErrorMessage("Not a Kubernetes API Object!");
@@ -126,7 +104,7 @@ async function explain(obj, field):Promise<string> {
         if (field && field.length > 0) {
             ref = ref + "." + field;
         }
-        kubectlInternal(` explain ${ref}`, function (result, stdout, stderr) {
+        kubectlInternal(` explain ${ref}`, (result, stdout, stderr) => {
             if (result !== 0) {
                 vscode.window.showErrorMessage("Failed to run explain: " + stderr);
                 return;

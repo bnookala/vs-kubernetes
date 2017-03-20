@@ -10,7 +10,7 @@ import {kubectlFound} from './extension';
 const WINDOWS = 'win32';
 const outputChannel = vscode.window.createOutputChannel('vs-kubernetes');
 
-export let waitForRunningPod = function (name, callback) {
+export function waitForRunningPod (name, callback) {
     kubectlInternal(` get pods ${name} -o jsonpath --template="{.status.phase}"`,
         function (result, stdout, stderr) {
             if (result !== 0) {
@@ -233,6 +233,7 @@ function findVersionInternal(fn) {
         },
         'async': true
     };
+
     shell.exec('git describe --always --dirty', opts, function (code, stdout, stderr) {
         if (code !== 0) {
             vscode.window.showErrorMessage('git log returned: ' + code);

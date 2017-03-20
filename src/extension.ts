@@ -10,7 +10,6 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 // External Dependencies
-import * as dockerfileParse from 'dockerfile-parse';
 import * as shell from 'shelljs';
 import * as yaml from 'js-yaml';
 
@@ -27,18 +26,29 @@ import {
     findKindNameOrPrompt,
     findKindNameForText,
     maybeRunKubernetesCommandForActiveWindow
-
 } from './kubeutil';
 
-import { debugKubernetes } from './commands/debug';
-import { deleteKubernetes } from './commands/delete';
-import { diffKubernetes } from './commands/diff';
-import { applyKubernetes } from './commands/apply';
-import { provideHover, explainActiveWindow } from './hover/hoverProvider';
+import deleteKubernetes from './commands/delete';
+import applyKubernetes from './commands/apply';
+import toggleExplainActiveWindow from './commands/explain'
+import getKubernetes from './commands/get';
+import runKubernetes from './commands/run';
+
+
+import diffKubernetes from './commands/diff';
+import debugKubernetes from './commands/debug';
+
+
+import watchKubernetes from './commands/watch';
+
+import loadKubernetes from './commands/load';
+import exposeKubernetes from './commands/expose';
+import { provideHover } from './hover/explainProvider';
+
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
-export function activate(context) {
+export const activate = (context) => {
     var bin = vscode.workspace.getConfiguration('vs-kubernetes')['vs-kubernetes.kubectl-path'];
     if (!bin) {
         findBinary('kubectl', function (err, output) {
@@ -61,7 +71,7 @@ export function activate(context) {
         ),
         vscode.commands.registerCommand('extension.vsKubernetesDelete', deleteKubernetes),
         vscode.commands.registerCommand('extension.vsKubernetesApply', applyKubernetes),
-        vscode.commands.registerCommand('extension.vsKubernetesExplain', explainActiveWindow),
+        vscode.commands.registerCommand('extension.vsKubernetesExplain', toggleExplainActiveWindow),
         vscode.commands.registerCommand('extension.vsKubernetesLoad', loadKubernetes),
         vscode.commands.registerCommand('extension.vsKubernetesGet', getKubernetes),
         vscode.commands.registerCommand('extension.vsKubernetesRun', runKubernetes),
@@ -87,61 +97,7 @@ export function activate(context) {
     subscriptions.forEach((sub) => context.subscriptions.push(sub), this);
 }
 
-function loadKubernetes() {
-    vscode.window.showInputBox({
-        prompt: "What resource do you want to load?"
-    }).then(function (value) {
-        kubectlInternal(" -o json get " + value, function (result, stdout, stderr) {
-            if (result !== 0) {
-                vscode.window.showErrorMessage("Get command failed: " + stderr);
-                return;
-            }
-            var filename = value.replace('/', '-');
-            var filepath = path.join(vscode.workspace.rootPath, filename + '.json');
-            vscode.workspace.openTextDocument(vscode.Uri.parse('untitled:' + filepath)).then(doc => {
-                var start = new vscode.Position(0, 0);
-                var end = new vscode.Position(0, 0);
-                var range = new vscode.Range(start, end);
-                var edit = new vscode.TextEdit(range, stdout);
-
-                var wsEdit = new vscode.WorkspaceEdit();
-                wsEdit.set(doc.uri, [edit]);
-                vscode.workspace.applyEdit(wsEdit);
-                vscode.window.showTextDocument(doc);
-            });
-        })
-    });
-}
-
-function exposeKubernetes() {
-    var kindName = findKindName();
-    if (!kindName) {
-        vscode.window.showErrorMessage("couldn't find a relevant type to expose.");
-        return;
-    }
-    var cmd = "expose " + kindName;
-    var ports = getPorts();
-    if (ports && ports.length > 0) {
-        cmd += " --port=" + ports[0]
-    }
-
-    kubectl(cmd);
-}
-
-function getKubernetes() {
-    var kindName = findKindName();
-    if (kindName) {
-        maybeRunKubernetesCommandForActiveWindow('get --no-headers -o wide -f ');
-        return;
-    }
-    vscode.window.showInputBox({
-        prompt: "What resource do you want to get?"
-    }).then(function (value) {
-        kubectl(` get ${value} -o wide --no-headers`);
-    });
-}
-
-export function findPods(labelQuery, callback) {
+export const findPods = (labelQuery, callback) => {
     let findPodsCmd = ' get pods -o json'
 
     if (labelQuery) {
@@ -171,12 +127,6 @@ function findPodsForApp(callback) {
 
     var appName = path.basename(vscode.workspace.rootPath);
     findPods(`run=${appName}`, callback);
-}
-
-function runKubernetes() {
-    buildPushThenExec(function(name, image) {
-        kubectlInternal(`run ${name} --image=${image}`, kubectlDone);
-    });
 }
 
 function curry(fn, arg) {
@@ -274,44 +224,10 @@ function kubectlOutput(result, stdout, stderr, name) {
     channel.show();
 }
 
-function getPorts() {
-    var file = vscode.workspace.rootPath + '/Dockerfile';
-    if (!fs.existsSync(file)) {
-        return null;
-    }
-    try {
-        var data = fs.readFileSync(file, 'utf-8');
-        var obj = dockerfileParse(data);
-        return obj.expose;
-    } catch (ex) {
-        console.log(ex);
-        return null;
-    }
-}
-
 function describeKubernetes() {
     findKindNameOrPrompt().then(function (value) {
         var fn = curry(kubectlOutput, value + "-describe");
         kubectlInternal(' describe ' + value, fn);
-    });
-}
-
-
-var watchTerminal;
-
-function watchKubernetes () {
-    vscode.window.showInputBox().then(function (value) {
-        // let's try to keep only one `watch` terminal opened at a time, since
-        // they don't dispose automatically (unless the lil garbage can is clicked)
-        if (watchTerminal) {
-            watchTerminal.hide();
-            watchTerminal.dispose();
-        }
-
-        // TODO: validate the value option.
-        let watchCommand = ['get', value, '--all-namespaces', '--watch']
-        watchTerminal = vscode.window.createTerminal('Kubernetes Watch', 'kubectl', watchCommand)
-        watchTerminal.show();
     });
 }
 
@@ -426,4 +342,4 @@ function findBinary(binName, callback) {
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() { }
+export const deactivate = () => {}

@@ -9,7 +9,7 @@ import {
     kubectlInternal,
 } from '../kubeutil'
 
-export let diffKubernetes = function (callback) {
+export default function diffKubernetes (callback) {
     getTextForActiveWindow(function (data, file) {
         console.log(data, file);
         var kindName = null;
