@@ -28,6 +28,9 @@ let kubectlFound = false;
 export function activate(context) {
     checkForKubectl('activation', function () { });
 
+    let term = vscode.window.createTerminal('test', 'ls', ['.']);
+    term.show();
+
     const subscriptions = [
         vscode.commands.registerCommand('extension.vsKubernetesCreate',
             maybeRunKubernetesCommandForActiveWindow.bind(this, 'create -f')
@@ -63,7 +66,8 @@ export function activate(context) {
 }
 
 // this method is called when your extension is deactivated
-export const deactivate = () => { };
+export const deactivate = () => {};
+
 function checkForKubectl(errorMessageMode, handler) {
     if (kubectlFound) {
         handler();
