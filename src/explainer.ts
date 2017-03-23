@@ -5,7 +5,7 @@ export default function formatExplain(rawText) {
         return rawText;
     }
 
-    var lines = rawText.replace(/\r\n/g, '\n').split('\n');
+    const lines = rawText.replace(/\r\n/g, '\n').split('\n');
 
     if (rawText.startsWith('FIELD')) {
         return formatField(lines);
@@ -20,8 +20,8 @@ export default function formatExplain(rawText) {
     }
 
     return {
-        'language': "json",
-        'value': rawText
+        language: 'json',
+        value: rawText
     };
 }
 
@@ -44,10 +44,8 @@ function formatField(lines) {
     second line
     */
 
-    var formattedLines = lines.map(function (line) {
-        var formatted = emboldenPrefix(line);
-        formatted = removeLeading(formatted);
-        return formatted;
+    const formattedLines = lines.map((line) => {
+        return removeLeading(emboldenPrefix(line));
     }, this);
 
     return formattedLines.join('\n')
@@ -89,12 +87,12 @@ function formatDescription(lines) {
     second line
     */
 
-    var parserState = 'init';
-    var formattedLines = [];
-    let formatted;
+    let parserState = 'init',
+        formattedLines = [],
+        formatted;
 
     while (lines.length > 0) {
-        var line = lines.shift();
+        let line = lines.shift();
         switch (parserState) {
             case 'init':
                 formatted = emboldenPrefix(line);
@@ -182,12 +180,12 @@ function formatResource(lines) {
     second line
     */
 
-    var parserState = 'init';
-    var formattedLines = [];
-    let formatted;
+    let parserState = 'init',
+        formattedLines = [],
+        formatted;
 
     while (lines.length > 0) {
-        var line = lines.shift();
+        let line = lines.shift();
         switch (parserState) {
             case 'init':
                 formatted = emboldenPrefix(line);
@@ -245,8 +243,8 @@ function emboldenPrefix(line) {
     if (!line) {
         return line;
     }
-    var prefixes = ['FIELD:', 'FIELDS:', 'DESCRIPTION:', 'RESOURCE:'];
-    prefixes.forEach(function (prefix) {
+    const prefixes = ['FIELD:', 'FIELDS:', 'DESCRIPTION:', 'RESOURCE:'];
+    prefixes.forEach((prefix) => {
         if (line.startsWith(prefix)) {
             line = '**' + prefix + '**' + line.substring(prefix.length);
         }
@@ -258,13 +256,16 @@ function emboldenFieldName(line) {
     if (!line) {
         return line;
     }
-    var parse = line.match(/^(\w+)\s+\<(\[\])?\w+\>(\s+-required-)?$/);
+
+    const  parse = line.match(/^(\w+)\s+\<(\[\])?\w+\>(\s+-required-)?$/);
+
     if (parse) {
         line = '**' + parse[1] + '**' + line.substring(parse[1].length)
         if (parse[3]) {
             line = line.replace('-required-', '**[required]**')
         }
     }
+
     return line;
 }
 
